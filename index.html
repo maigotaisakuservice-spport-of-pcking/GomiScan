@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>GomiScan - ごみ仕分けAI</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/onsenui/css/onsenui.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/onsenui/css/onsen-css-components.min.css" />
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/onsenui/js/onsenui.min.js"></script>
+  <!-- TensorFlow Lite Web API -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.8.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl@4.8.0/dist/tf-backend-webgl.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-cpu@4.8.0/dist/tf-backend-cpu.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-converter@4.8.0/dist/tf-converter.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.0/dist/mobilenet.min.js"></script>
+</head>
+<body>
+  <ons-page id="mainPage">
+    <ons-toolbar>
+      <div class="center">GomiScan - ごみ仕分けAI</div>
+      <div class="right">
+        <ons-toolbar-button id="btnSettings"><ons-icon icon="ion-ios-gear" size="28"></ons-icon></ons-toolbar-button>
+      </div>
+    </ons-toolbar>
+
+    <div style="margin: 20px;">
+      <ons-input id="zipcode" modifier="underbar" placeholder="郵便番号を入力 (例: 1000001)" maxlength="7" inputmode="numeric"></ons-input>
+      <br /><br />
+      <ons-button id="btnSelectImage">写真を選択 / 撮影</ons-button>
+      <input type="file" id="fileInput" accept="image/*" capture="environment" style="display:none" />
+      <br /><br />
+      <canvas id="previewCanvas" style="width:100%;max-width:300px;display:none;border:1px solid #ccc;"></canvas>
+      <br />
+      <ons-button id="btnAnalyze" disabled>判定する</ons-button>
+      <br /><br />
+      <div id="resultArea" style="white-space: pre-wrap;"></div>
+    </div>
+  </ons-page>
+
+  <!-- 設定ダイアログ -->
+  <ons-dialog id="settingsDialog" cancelable>
+    <div style="padding: 20px; width: 300px;">
+      <h3>設定</h3>
+      <ons-list>
+        <ons-list-item>
+          <label class="left">クイズモードを有効にする</label>
+          <div class="right">
+            <ons-switch id="quizSwitch"></ons-switch>
+          </div>
+        </ons-list-item>
+      </ons-list>
+      <br />
+      <ons-button id="btnCloseSettings">閉じる</ons-button>
+    </div>
+  </ons-dialog>
+
+  <script src="main.js"></script>
+</body>
+</html>
