@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>GomiScan Web</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://cdn.jsdelivr.net/npm/onsenui/js/onsenui.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/onsenui/js/onsen.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/onsenui/css/onsenui.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/onsenui/css/onsen-css-components.min.css" />
+
+    <!-- CSS埋め込み -->
+    <style>
+      body { background: #f9f9f9; }
+      .logo { text-align: center; margin: 20px 0; font-size: 26px; color: #4CAF50; font-weight: bold; }
+      .centered { text-align: center; margin-top: 20px; }
+      .error-msg { color: red; font-size: 14px; text-align: center; }
+      .small-input { width: 100%; max-width: 300px; margin: 0 auto; }
+    </style>
+  </head>
+  <body>
+    <ons-navigator id="appNavigator" page="login.html"></ons-navigator>
+
+    <!-- ログインページ -->
+    <template id="login.html">
+      <ons-page>
+        <div class="logo">GomiScan ログイン</div>
+        <div class="centered">
+          <ons-input id="tenantCode" class="small-input" placeholder="暗証番号 (5桁)" type="number" maxlength="5"></ons-input><br><br>
+          <ons-button onclick="loginTenant()">ログイン</ons-button>
+          <div id="loginError" class="error-msg"></div>
+          <br><br>
+          <ons-button modifier="quiet" onclick="document.querySelector('#appNavigator').pushPage('register.html')">
+            新規テナント登録
+          </ons-button>
+        </div>
+      </ons-page>
+    </template>
+
+    <!-- 新規登録ページ -->
+    <template id="register.html">
+      <ons-page>
+        <ons-toolbar>
+          <div class="center">テナント新規登録</div>
+        </ons-toolbar>
+        <div style="padding: 10px;">
+          <ons-input id="regTenantName" modifier="underbar" placeholder="テナント名" float></ons-input><br>
+          <ons-input id="regPin" type="number" modifier="underbar" placeholder="暗証番号 (5桁)" float></ons-input><br>
+          <ons-switch id="regIsEnterprise"></ons-switch> 企業ゴミ対応<br><br>
+          <ons-input id="regContact" modifier="underbar" placeholder="連絡先メール" float></ons-input><br>
+          <ons-input id="regWebhook" modifier="underbar" placeholder="Teams Webhook URL" float></ons-input><br>
+          <ons-button onclick="registerTenant()">登録</ons-button>
+          <div id="registerError" class="error-msg"></div>
+        </div>
+      </ons-page>
+    </template>
+
+    <!-- メイン画面 -->
+    <template id="main.html">
+      <ons-page id="mainPage">
+        <ons-toolbar>
+          <div class="center" id="tenantTitle">GomiScan</div>
+          <div class="right">
+            <ons-toolbar-button onclick="logout()"><ons-icon icon="md-power"></ons-icon></ons-toolbar-button>
+          </div>
+        </ons-toolbar>
+        <ons-tabbar position="auto">
+          <ons-tab label="ごみ判別" icon="md-camera" page="tab-scan.html" active></ons-tab>
+          <ons-tab label="スケジュール" icon="md-calendar" page="tab-schedule.html"></ons-tab>
+          <ons-tab label="設定" icon="md-settings" page="tab-settings.html"></ons-tab>
+        </ons-tabbar>
+      </ons-page>
+    </template>
+
+    <!-- ごみ判別 -->
+    <template id="tab-scan.html">
+      <ons-page>
+        <div style="padding: 10px;">
+          <input type="file" accept="image/*" id="imageInput" onchange="analyzeImage()" />
+          <p id="scanResult">画像を選んでください。</p>
+        </div>
+      </ons-page>
+    </template>
+
+    <!-- スケジュール -->
+    <template id="tab-schedule.html">
+      <ons-page>
+        <div style="padding: 10px;">
+          <p>収集予定日を確認・編集</p>
+          <div id="scheduleList"></div>
+          <ons-button onclick="addCustomDay()">カスタム曜日を追加</ons-button>
+        </div>
+      </ons-page>
+    </template>
+
+    <!-- 設定 -->
+    <template id="tab-settings.html">
+      <ons-page>
+        <div style="padding: 10px;">
+          <p>Teams通知</p>
+          <ons-button onclick="sendTeamsMessage()">通知を送信</ons-button>
+        </div>
+      </ons-page>
+    </template>
+
+    <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.0"></script>
+    <script src="enterprise.js"></script>
+  </body>
+</html>
