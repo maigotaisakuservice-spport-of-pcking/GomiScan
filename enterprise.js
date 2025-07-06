@@ -1,11 +1,11 @@
 // Firebase初期化（無料プラン用）
 const firebaseConfig = {
-    apiKey: "AIzaSyCSLAUpLPnuFPqEvIbF7qcQBygHii6EigI",
-    authDomain: "gomiscan-pcdaimaou.firebaseapp.com",
-    projectId: "gomiscan-pcdaimaou",
-    storageBucket: "gomiscan-pcdaimaou.firebasestorage.app",
-    messagingSenderId: "802767868691",
-    appId: "1:802767868691:web:000fea632524bce9a340e6"
+  apiKey: "AIzaSyCSLAUpLPnuFPqEvIbF7qcQBygHii6EigI",
+  authDomain: "gomiscan-pcdaimaou.firebaseapp.com",
+  projectId: "gomiscan-pcdaimaou",
+  storageBucket: "gomiscan-pcdaimaou.firebasestorage.app",
+  messagingSenderId: "802767868691",
+  appId: "1:802767868691:web:000fea632524bce9a340e6"
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
