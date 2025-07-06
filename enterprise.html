@@ -1,85 +1,203 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="utf-8" />
-  <title>AIごみ判別</title>
-  <script src="https://cdn.jsdelivr.net/npm/onsenui/js/onsenui.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/onsenui/js/onsenui.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/firebase@9.6.1/firebase-app-compat.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/firebase@9.6.1/firebase-firestore-compat.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/onsenui/css/onsenui.min.css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/onsenui/css/onsen-css-components.min.css" />
-  <style>body { font-family: sans-serif; }</style>
+  <meta charset="UTF-8">
+  <title>ごみAI管理パネル</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: sans-serif; padding: 1em; }
+    h1, h2 { color: #2c3e50; }
+    input, button, select { margin: 0.3em 0; padding: 0.4em; width: 100%; }
+    .hidden { display: none; }
+    #logTable { width: 100%; border-collapse: collapse; }
+    #logTable td, #logTable th { border: 1px solid #aaa; padding: 4px; }
+  </style>
 </head>
 <body>
-<ons-navigator id="appNavigator" page="login.html"></ons-navigator>
+  <h1>ごみAI管理</h1>
 
-<template id="login.html">
-  <ons-page>
-    <ons-toolbar><div class="center">ログイン</div></ons-toolbar>
-    <ons-card>
-      <ons-input id="tenantCode" modifier="underbar" placeholder="テナントPIN (5桁)" maxlength="5"></ons-input>
-      <ons-button onclick="loginTenant()">次へ</ons-button>
-      <p id="loginError" style="color:red;"></p>
-      <ons-button onclick="document.querySelector('#appNavigator').pushPage('register.html')">新規登録</ons-button>
-    </ons-card>
-  </ons-page>
-</template>
+  <!-- ログイン画面 -->
+  <div id="step1">
+    <h2>ログイン（PIN）</h2>
+    <input type="text" id="pinInput" placeholder="5桁のPIN">
+    <button onclick="verifyPIN()">次へ</button>
+    <p id="error1" style="color:red;"></p>
+  </div>
 
-<template id="auth.html">
-  <ons-page>
-    <ons-toolbar><div class="center">テナント認証</div></ons-toolbar>
-    <ons-card>
-      <h3 id="tenantNameView">テナント名</h3>
-      <ons-input id="tenantPassword" type="password" modifier="underbar" placeholder="パスワード"></ons-input>
-      <ons-button onclick="verifyTenantPassword()">ログイン</ons-button>
-      <p id="authError" style="color:red;"></p>
-    </ons-card>
-  </ons-page>
-</template>
+  <!-- パスワード入力 -->
+  <div id="step2" class="hidden">
+    <h2 id="tenantTitle"></h2>
+    <p>パスワードを入力してください</p>
+    <input type="password" id="pwInput">
+    <button onclick="verifyPassword()">ログイン</button>
+    <p id="error2" style="color:red;"></p>
+  </div>
 
-<template id="main.html">
-  <ons-page>
-    <ons-toolbar>
-      <div class="center" id="tenantTitle">ごみAI</div>
-      <div class="right"><ons-button modifier="quiet" onclick="logout()">⏻</ons-button></div>
-    </ons-toolbar>
-    <ons-card>
-      <input type="file" id="imageInput" accept="image/*" onchange="analyzeImage()" />
-      <p id="scanResult">画像を選択してください</p>
-      <ons-button onclick="sendTeamsMessage()">Teams通知テスト</ons-button>
-    </ons-card>
-    <ons-button onclick="document.querySelector('#appNavigator').pushPage('manage.html')">▶ テナント管理</ons-button>
-  </ons-page>
-</template>
+  <!-- 管理画面 -->
+  <div id="main" class="hidden">
+    <h2>管理ページ</h2>
+    <p><b id="tenantNameLabel"></b></p>
+    <input type="file" id="imageInput">
+    <button onclick="analyzeImage()">ごみ分類</button>
+    <p id="scanResult"></p>
 
-<template id="register.html">
-  <ons-page>
-    <ons-toolbar><div class="center">新規登録</div></ons-toolbar>
-    <ons-card>
-      <ons-input id="regTenantName" modifier="underbar" placeholder="テナント名"></ons-input>
-      <ons-input id="regPin" modifier="underbar" placeholder="PIN (5桁)" maxlength="5"></ons-input>
-      <ons-input id="regPassword" type="password" modifier="underbar" placeholder="パスワード"></ons-input>
-      <ons-input id="regContact" modifier="underbar" placeholder="連絡先（任意）"></ons-input>
-      <ons-input id="regWebhook" modifier="underbar" placeholder="Teams Webhook URL（任意）"></ons-input>
-      <ons-checkbox id="regIsEnterprise"></ons-checkbox>エンタープライズモード<br>
-      <ons-button onclick="registerTenant()">登録</ons-button>
-      <p id="registerError" style="color:red;"></p>
-    </ons-card>
-  </ons-page>
-</template>
+    <h3>スケジュール</h3>
+    <button onclick="addSchedule()">スケジュール追加</button>
 
-<template id="manage.html">
-  <ons-page>
-    <ons-toolbar><div class="center">管理ページ</div></ons-toolbar>
-    <ons-card>
-      <ons-button onclick="addCustomDay()">📆 カスタム曜日追加</ons-button>
-    </ons-card>
-  </ons-page>
-</template>
+    <h3>ログ</h3>
+    <table id="logTable"></table>
 
-<script src="enterprise.js"></script>
+    <h3>統計</h3>
+    <p id="stats"></p>
+
+    <h3>通知</h3>
+    <button onclick="sendTeams()">Teamsに通知</button>
+    <button onclick="logout()">ログアウト</button>
+  </div>
+
+  <!-- 新規登録 -->
+  <hr>
+  <h2>新規登録</h2>
+  <input id="regName" placeholder="テナント名">
+  <input id="regPin" placeholder="5桁PIN">
+  <input id="regPassword" type="password" placeholder="パスワード">
+  <input id="regWebhook" placeholder="Teams Webhook (任意)">
+  <button onclick="register()">登録</button>
+  <p id="regError" style="color:red;"></p>
+
+  <!-- Firebase & TensorFlow.js & Logic -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.11.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet"></script>
+  <script>
+    const config = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+    };
+    firebase.initializeApp(config);
+    const db = firebase.firestore();
+    let tenant = null, tenantId = null;
+
+    // ステップ1 → PIN入力
+    async function verifyPIN() {
+      const pin = document.getElementById("pinInput").value.trim();
+      const snap = await db.collection("tenants").where("pin", "==", pin).get();
+      if (snap.empty) return document.getElementById("error1").textContent = "認証失敗";
+
+      tenantId = snap.docs[0].id;
+      tenant = snap.docs[0].data();
+
+      document.getElementById("tenantTitle").textContent = "【" + tenant.name + "】";
+      document.getElementById("step1").classList.add("hidden");
+      document.getElementById("step2").classList.remove("hidden");
+    }
+
+    async function verifyPassword() {
+      const inputPw = document.getElementById("pwInput").value;
+      if (tenant.password !== inputPw) {
+        document.getElementById("error2").textContent = "パスワードが違います";
+        return;
+      }
+      document.getElementById("tenantNameLabel").textContent = tenant.name;
+      document.getElementById("step2").classList.add("hidden");
+      document.getElementById("main").classList.remove("hidden");
+      loadLogs();
+    }
+
+    async function register() {
+      const name = regName.value.trim(), pin = regPin.value.trim(), pw = regPassword.value, hook = regWebhook.value;
+      if (pin.length !== 5 || name === "" || pw.length < 4) return regError.textContent = "入力不備";
+      const dup = await db.collection("tenants").where("pin", "==", pin).get();
+      if (!dup.empty) return regError.textContent = "PIN重複";
+      await db.collection("tenants").add({ name, pin, password: pw, webhook: hook });
+      alert("登録完了");
+    }
+
+    async function analyzeImage() {
+      const input = imageInput.files[0];
+      if (!input) return alert("画像を選択");
+      scanResult.textContent = "判定中...";
+
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const img = new Image();
+        img.src = reader.result;
+        img.onload = async () => {
+          const model = await mobilenet.load();
+          const result = await model.classify(img);
+          const top = result[0];
+          scanResult.textContent = `分類: ${top.className} (${(top.probability * 100).toFixed(1)}%)`;
+
+          await db.collection("logs").add({
+            tenantId, result: top.className, prob: top.probability,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+          });
+          loadLogs();
+
+          if (tenant.webhook?.startsWith("https://")) {
+            fetch(tenant.webhook, {
+              method: "POST", headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ text: `🧾ごみ分類: ${top.className} (${(top.probability * 100).toFixed(1)}%)` })
+            });
+          }
+        };
+      };
+      reader.readAsDataURL(input);
+    }
+
+    async function addSchedule() {
+      const s = prompt("曜日名");
+      if (!s) return;
+      await db.collection("schedule").add({
+        tenantId, day: s, createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      });
+      alert("登録しました");
+    }
+
+    async function loadLogs() {
+      const snap = await db.collection("logs")
+        .where("tenantId", "==", tenantId)
+        .orderBy("timestamp", "desc").limit(10).get();
+
+      let html = "<tr><th>時間</th><th>分類</th><th>確率</th></tr>";
+      let countMap = {};
+      snap.forEach(doc => {
+        const d = doc.data();
+        const t = d.timestamp?.toDate().toLocaleString();
+        html += `<tr><td>${t}</td><td>${d.result}</td><td>${(d.prob * 100).toFixed(1)}%</td></tr>`;
+        countMap[d.result] = (countMap[d.result] || 0) + 1;
+      });
+      logTable.innerHTML = html;
+
+      let statsText = "";
+      for (const k in countMap) {
+        statsText += `${k}: ${countMap[k]}回\n`;
+      }
+      stats.textContent = statsText || "データなし";
+    }
+
+    function sendTeams() {
+      if (!tenant.webhook) return alert("Webhook未設定");
+      fetch(tenant.webhook, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: "🔔 テスト通知 - " + new Date().toLocaleString() })
+      });
+    }
+
+    function logout() {
+      tenant = null;
+      tenantId = null;
+      location.reload();
+    }
+
+    // オフラインキャッシュ
+    window.addEventListener('load', () => {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js').catch(console.error);
+      }
+    });
+  </script>
 </body>
 </html>
