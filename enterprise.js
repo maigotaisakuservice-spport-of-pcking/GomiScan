@@ -14,46 +14,53 @@ const db = firebase.firestore();
 let tenantId = null;
 let tenantData = null;
 
-// ログイン処理（PIN認証）
+// 初回ログイン（PIN認証）
 async function loginTenant() {
   const pin = document.getElementById("tenantCode").value.trim();
-  if (pin.length !== 5) {
-    return (document.getElementById("loginError").textContent = "5桁の番号を入力してください");
-  }
-
   const snap = await db.collection("tenants").where("pin", "==", pin).get();
   if (snap.empty) {
-    document.getElementById("loginError").textContent = "認証失敗（登録されていません）";
-    return;
+    return (document.getElementById("loginError").textContent = "テナントが見つかりません");
   }
 
   const doc = snap.docs[0];
   tenantId = doc.id;
   tenantData = doc.data();
-  document.querySelector("#tenantTitle").innerText = tenantData.name;
+  document.querySelector("#tenantNameView").innerText = tenantData.name;
+  document.querySelector("#appNavigator").pushPage("auth.html");
+}
+
+// 認証（パスワードチェック）
+function verifyTenantPassword() {
+  const pass = document.getElementById("tenantPassword").value;
+  if (pass !== tenantData.password) {
+    document.getElementById("authError").textContent = "パスワードが違います";
+    return;
+  }
   document.querySelector("#appNavigator").pushPage("main.html");
 }
 
-// 登録処理
+// 新規登録（パスワード追加）
 async function registerTenant() {
   const name = document.getElementById("regTenantName").value.trim();
   const pin = document.getElementById("regPin").value.trim();
+  const password = document.getElementById("regPassword").value;
   const contact = document.getElementById("regContact").value.trim();
   const webhook = document.getElementById("regWebhook").value.trim();
   const isEnterprise = document.getElementById("regIsEnterprise").checked;
 
-  if (pin.length !== 5 || name === "") {
+  if (pin.length !== 5 || name === "" || password.length < 4) {
     return (document.getElementById("registerError").textContent = "入力内容を確認してください");
   }
 
   const dupCheck = await db.collection("tenants").where("pin", "==", pin).get();
   if (!dupCheck.empty) {
-    return (document.getElementById("registerError").textContent = "このPINは既に使われています");
+    return (document.getElementById("registerError").textContent = "PINはすでに使用されています");
   }
 
-  const newDoc = await db.collection("tenants").add({
+  await db.collection("tenants").add({
     name,
     pin,
+    password,
     contact,
     webhook,
     isEnterprise,
@@ -62,7 +69,7 @@ async function registerTenant() {
 
   alert("登録完了しました。ログインしてください");
   document.querySelector("#appNavigator").popPage();
-}
+    }
 
 // ログアウト
 function logout() {
